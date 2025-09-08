@@ -1,8 +1,6 @@
-use std::fmt::Display;
-
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum TokenType {
     Illegal,
-    Eof,
 
     // Identifiers + literals
     Ident, // add, foobar, x, y ....
@@ -26,29 +24,16 @@ pub enum TokenType {
     Let,
 }
 
-impl Display for TokenType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            TokenType::Illegal => "Illegal",
-            TokenType::Eof => "Eof",
-            TokenType::Ident => "Ident",
-            TokenType::Int => "Int",
-            TokenType::Assign => "=",
-            TokenType::Plus => "+",
-            TokenType::Comma => ",",
-            TokenType::Semicolon => ";",
-            TokenType::LParen => "(",
-            TokenType::RParen => ")",
-            TokenType::LBrace => "{",
-            TokenType::RBrace => "}",
-            TokenType::Function => "function",
-            TokenType::Let => "let",
-        };
-        write!(f, "{s}")
-    }
-}
-
 pub struct Token {
     pub token_type: TokenType,
-    pub literal: String,
+    pub literal: char,
+}
+
+impl Token {
+    pub fn new(token_type: TokenType, ch: char) -> Self {
+        Self {
+            token_type,
+            literal: ch,
+        }
+    }
 }
