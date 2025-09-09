@@ -39,9 +39,9 @@ pub enum Token {
     Return,   // "return"
 }
 
-impl From<String> for Token {
-    fn from(value: String) -> Self {
-        match value.as_str() {
+impl From<&str> for Token {
+    fn from(value: &str) -> Self {
+        match value {
             "func" => Token::Function,
             "let" => Token::Let,
             "true" => Token::True,

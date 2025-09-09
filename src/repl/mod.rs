@@ -18,7 +18,7 @@ pub fn start() {
             break;
         }
 
-        let l = Lexer::new(line.trim().to_string());
+        let l = Lexer::new(line.trim());
 
         for token in l {
             println!("{token:?}")

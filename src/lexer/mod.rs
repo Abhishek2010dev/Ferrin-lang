@@ -1,102 +1,105 @@
 use crate::token::Token;
 
-#[derive(Default)]
-pub struct Lexer {
-    input: String,
+pub struct Lexer<'a> {
+    input: &'a [u8],
     position: usize,
-    read_position: usize, // current reading position in input (after current char)
-    ch: Option<char>,     // current char under examination
+    read_position: usize,
+    ch: Option<u8>,
 }
 
-impl Lexer {
-    pub fn new(input: String) -> Self {
+impl<'a> Lexer<'a> {
+    pub fn new(input: &'a str) -> Self {
         let mut lexer = Self {
-            input,
-            ..Default::default()
+            input: input.as_bytes(),
+            position: 0,
+            read_position: 0,
+            ch: None,
         };
         lexer.read_char();
         lexer
     }
-
+    #[inline(always)]
     fn read_char(&mut self) {
         if self.read_position >= self.input.len() {
-            self.ch = None
+            self.ch = None;
         } else {
-            self.ch = self.input.chars().nth(self.read_position);
+            self.ch = Some(self.input[self.read_position]);
         }
         self.position = self.read_position;
         self.read_position += 1;
     }
 
-    fn read_identifier(&mut self) -> Option<String> {
-        let position = self.position;
-        while self
-            .ch
-            .map(|c| c.is_alphabetic() || '_' == c)
-            .unwrap_or(false)
-        {
-            self.read_char();
-        }
-        self.input
-            .get(position..self.position)
-            .map(|v| v.to_string())
+    #[inline(always)]
+    fn peek_char(&self) -> Option<u8> {
+        self.input.get(self.read_position).copied()
     }
 
+    #[inline(always)]
     fn skip_whitespace(&mut self) {
-        while self.ch.map(|ch| ch.is_whitespace()).unwrap_or(false) {
+        while matches!(self.ch, Some(b' ' | b'\t' | b'\n' | b'\r')) {
             self.read_char();
         }
     }
 
-    fn read_number(&mut self) -> Option<String> {
-        let position = self.position;
-        while self.ch.map(|ch| ch.is_ascii_digit()).unwrap_or(false) {
-            self.read_char();
+    fn read_identifier(&mut self) -> &str {
+        let start = self.position;
+        while let Some(ch) = self.ch {
+            if (ch as char).is_alphabetic() || ch == b'_' {
+                self.read_char();
+            } else {
+                break;
+            }
         }
-        self.input
-            .get(position..self.position)
-            .map(|v| v.to_string())
+        std::str::from_utf8(&self.input[start..self.position]).unwrap()
     }
 
-    fn peek_char(&self) -> Option<char> {
-        self.input.chars().nth(self.read_position)
+    fn read_number(&mut self) -> &str {
+        let start = self.position;
+        while let Some(ch) = self.ch {
+            if ch.is_ascii_digit() {
+                self.read_char();
+            } else {
+                break;
+            }
+        }
+        std::str::from_utf8(&self.input[start..self.position]).unwrap()
     }
 }
 
-impl Iterator for Lexer {
+impl<'a> Iterator for Lexer<'a> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.skip_whitespace();
         let ch = self.ch?;
         let token = match ch {
-            '=' if self.peek_char()? == '=' => {
+            b'=' if self.peek_char()? == b'=' => {
                 self.read_char();
                 Token::Eq
             }
-            '=' => Token::Assign,
-            ';' => Token::Semicolon,
-            '(' => Token::LParen,
-            ')' => Token::RParen,
-            '{' => Token::LBrace,
-            '}' => Token::RBrace,
-            '+' => Token::Plus,
-            '-' => Token::Minus,
-            '*' => Token::Asterisk,
-            '/' => Token::Slash,
-            '<' => Token::LT,
-            '>' => Token::GT,
-            ',' => Token::Comma,
-            '!' if self.peek_char()? == '=' => {
+            b'=' => Token::Assign,
+            b';' => Token::Semicolon,
+            b'(' => Token::LParen,
+            b')' => Token::RParen,
+            b'{' => Token::LBrace,
+            b'}' => Token::RBrace,
+            b'+' => Token::Plus,
+            b'-' => Token::Minus,
+            b'*' => Token::Asterisk,
+            b'/' => Token::Slash,
+            b'<' => Token::LT,
+            b'>' => Token::GT,
+            b',' => Token::Comma,
+            b'!' if self.peek_char()? == b'=' => {
                 self.read_char();
                 Token::NotEq
             }
-            '!' => Token::Bang,
-            ch if ch.is_alphabetic() => {
-                return Some(self.read_identifier()?.into());
+            b'!' => Token::Bang,
+            ch if (ch as char).is_alphabetic() => {
+                return Some(self.read_identifier().into());
             }
             ch if ch.is_ascii_digit() => {
-                return Some(Token::Int(self.read_number()?));
+                return Some(Token::Int(self.read_number().to_owned()));
             }
             _ => Token::Illegal,
         };
@@ -179,7 +182,7 @@ if result > 20 {
             Token::Semicolon,
             Token::RBrace,
         ];
-        let mut lexer = Lexer::new(input.to_string());
+        let mut lexer = Lexer::new(input);
 
         for (i, expected_token_type) in tests.iter().enumerate() {
             let token = lexer.next().expect("Expected a token");
