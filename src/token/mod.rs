@@ -24,16 +24,27 @@ pub enum TokenType {
     Let,
 }
 
+impl TokenType {
+    pub fn from_ident(ident: &str) -> Self {
+        match ident {
+            "func" => TokenType::Function,
+            "let" => TokenType::Let,
+            _ => TokenType::Ident,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Token {
     pub token_type: TokenType,
-    pub literal: char,
+    pub literal: String,
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, ch: char) -> Self {
+    pub fn new(token_type: TokenType, literal: String) -> Self {
         Self {
             token_type,
-            literal: ch,
+            literal,
         }
     }
 }
