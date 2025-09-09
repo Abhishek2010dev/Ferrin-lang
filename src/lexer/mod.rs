@@ -71,13 +71,7 @@ impl<'a> Iterator for Lexer<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.skip_whitespace();
-        let ch = self.ch?;
-        let token = match ch {
-            b'=' if self.peek_char()? == b'=' => {
-                self.read_char();
-                Token::Eq
-            }
-            b'=' => Token::Assign,
+        let token = match self.ch? {
             b';' => Token::Semicolon,
             b'(' => Token::LParen,
             b')' => Token::RParen,
@@ -94,12 +88,18 @@ impl<'a> Iterator for Lexer<'a> {
                 self.read_char();
                 Token::NotEq
             }
-            b'!' => Token::Bang,
-            ch if (ch as char).is_alphabetic() => {
-                return Some(self.read_identifier().into());
+            b'=' if self.peek_char()? == b'=' => {
+                self.read_char();
+                Token::Eq
             }
+            b'=' => Token::Assign,
+
+            b'!' => Token::Bang,
             ch if ch.is_ascii_digit() => {
                 return Some(Token::Int(self.read_number().to_owned()));
+            }
+            ch if (ch as char).is_alphabetic() => {
+                return Some(self.read_identifier().into());
             }
             _ => Token::Illegal,
         };
