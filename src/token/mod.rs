@@ -39,17 +39,15 @@ pub enum Token {
     Return,   // "return"
 }
 
-impl From<&str> for Token {
-    fn from(value: &str) -> Self {
-        match value {
-            "func" => Token::Function,
-            "let" => Token::Let,
-            "true" => Token::True,
-            "false" => Token::False,
-            "if" => Token::If,
-            "else" => Token::Else,
-            "return" => Token::Return,
-            ch => Token::Ident(ch.to_string()),
-        }
+pub fn lookup_ident(ident: &str) -> Token {
+    match ident {
+        "let" => Token::Let,
+        "func" => Token::Function,
+        "return" => Token::Return,
+        "if" => Token::If,
+        "else" => Token::Else,
+        "true" => Token::True,
+        "false" => Token::False,
+        _ => Token::Ident(ident.to_string()),
     }
 }

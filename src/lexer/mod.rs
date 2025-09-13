@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::token::{Token, lookup_ident};
 
 pub struct Lexer<'a> {
     input: &'a [u8],
@@ -41,10 +41,19 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn read_identifier(&mut self) -> &str {
+        self.read_with_condition(|ch| (ch as char).is_alphabetic())
+    }
+
+    #[inline(always)]
+    fn read_with_condition<F>(&mut self, condition: F) -> &str
+    where
+        F: Fn(u8) -> bool,
+    {
         let start = self.position;
         while let Some(ch) = self.ch {
-            if (ch as char).is_alphabetic() || ch == b'_' {
+            if condition(ch) {
                 self.read_char();
             } else {
                 break;
@@ -53,16 +62,9 @@ impl<'a> Lexer<'a> {
         std::str::from_utf8(&self.input[start..self.position]).unwrap()
     }
 
+    #[inline(always)]
     fn read_number(&mut self) -> &str {
-        let start = self.position;
-        while let Some(ch) = self.ch {
-            if ch.is_ascii_digit() {
-                self.read_char();
-            } else {
-                break;
-            }
-        }
-        std::str::from_utf8(&self.input[start..self.position]).unwrap()
+        self.read_with_condition(|x| x.is_ascii_digit())
     }
 }
 
@@ -99,7 +101,7 @@ impl<'a> Iterator for Lexer<'a> {
                 return Some(Token::Int(self.read_number().to_owned()));
             }
             ch if (ch as char).is_alphabetic() => {
-                return Some(self.read_identifier().into());
+                return Some(lookup_ident(self.read_identifier()));
             }
             _ => Token::Illegal,
         };
